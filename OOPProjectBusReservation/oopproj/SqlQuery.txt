@@ -1,0 +1,253 @@
+create database BRMSFinal1
+use BRMSFinal1
+
+CREATE TABLE users
+(
+    userId INT PRIMARY KEY,
+    username VARCHAR(20) UNIQUE,
+    password VARCHAR(20) NOT NULL
+);
+select* from booking	
+insert into users values(502,'passenger','passenger123');
+select*from users
+CREATE TABLE routes
+(
+    rId INT PRIMARY KEY,
+    rName VARCHAR(20) DEFAULT 'NotAssigned',
+    rDistance INT
+);
+
+DELETE FROM bus where bId=102
+
+CREATE TABLE bus
+(
+    bId INT PRIMARY KEY,
+    bName VARCHAR(20),
+    bCapacity INT CHECK (bCapacity >= 0),
+    perSeatcost INT CHECK (perSeatcost >= 0),
+    routeId INT,
+    FOREIGN KEY (routeId) REFERENCES routes(rId)
+);
+create table feedback
+(
+ fId int primary key identity(201,1),
+ uId int,
+ fb varchar(100) default 'Very Good Service.',
+);
+CREATE TABLE accounts
+(
+    accountId INT PRIMARY KEY IDENTITY(1,1),
+    userId INT NOT NULL,
+    balance DECIMAL(10, 2) CHECK (balance >= 0),
+    FOREIGN KEY (userId) REFERENCES users(userId)
+);
+select* from booking
+insert into accounts VALUES(65889,3000)
+CREATE TABLE booking
+(
+    bookid INT PRIMARY KEY identity(1,1),
+    rrId INT,
+    pName VARCHAR(20),
+    seats INT CHECK (seats > 0),
+    userId INT,
+    FOREIGN KEY (rrId) REFERENCES routes(rId),
+    FOREIGN KEY (userId) REFERENCES users(userId)
+);
+
+drop table booking
+select*from routes
+insert into booking values(
+delete from booking where rrId=101 and userId=65872
+insert into booking values(1,101,'hasnain',5,65872);
+
+
+CREATE PROCEDURE UpdateBusCapacity
+    @booking_id INT
+AS
+BEGIN
+    DECLARE @booked_seats INT;
+    DECLARE @bus_capacity INT;
+    DECLARE @route_id INT;
+
+    -- Retrieve the number of booked seats and route ID from the booking table
+    SELECT @booked_seats = seats, @route_id = rrId 
+    FROM booking 
+    WHERE bookid = @booking_id;
+
+    -- Retrieve the bus capacity for the route
+    SELECT @bus_capacity = bCapacity 
+    FROM bus 
+    WHERE routeId = @route_id;
+
+    -- Update the bus capacity
+    SET @bus_capacity = @bus_capacity - @booked_seats;
+
+    -- Update the bus table with the new capacity
+    UPDATE bus 
+    SET bCapacity = @bus_capacity 
+    WHERE routeId = @route_id;
+END;
+
+EXEC UpdateBusCapacity @booking_id ;
+
+
+CREATE PROCEDURE CancelBooking1
+    @booking_id INT,
+    @route_id INT
+AS
+BEGIN
+    DECLARE @booked_seats INT;
+    DECLARE @bus_capacity INT;
+
+    -- Retrieve the number of booked seats for the given booking_id and route_id
+    SELECT @booked_seats = seats 
+    FROM booking 
+    WHERE bookid = @booking_id AND rrId = @route_id;
+
+    -- Check if the booking exists
+    IF @booked_seats IS NULL
+    BEGIN
+        PRINT 'Booking not found';
+        RETURN;
+    END
+
+    -- Retrieve the current bus capacity for the given route_id
+    SELECT @bus_capacity = bCapacity 
+    FROM bus 
+    WHERE routeId = @route_id;
+
+    -- Update the bus capacity
+    SET @bus_capacity = @bus_capacity + @booked_seats;
+
+    -- Update the bus table with the new capacity
+    UPDATE bus 
+    SET bCapacity = @bus_capacity 
+    WHERE routeId = @route_id;
+
+    -- Delete the booking
+    DELETE FROM booking 
+    WHERE bookid = @booking_id AND rrId = @route_id;
+
+    PRINT 'Booking cancelled and bus capacity updated';
+END;
+
+
+
+
+
+select * from routes
+SELECT * FROM booking
+SELECT* FROM accounts
+select * from bus
+delete from bus where bId = 3
+
+
+CREATE PROCEDURE CreateBooking1
+    @rrId INT,
+    @pName VARCHAR(20),
+    @seats INT,
+    @userId INT
+AS
+BEGIN
+    DECLARE @bus_capacity INT;
+    DECLARE @per_seat_cost INT;
+    DECLARE @total_cost DECIMAL(10, 2);
+    DECLARE @current_balance DECIMAL(10, 2);
+    DECLARE @new_booking_id INT; -- Add a variable to store the new booking ID
+
+    -- Retrieve bus capacity and per seat cost
+    SELECT @bus_capacity = bCapacity, @per_seat_cost = perSeatcost
+    FROM bus 
+    WHERE routeId = @rrId;
+
+    -- Check if there are enough seats available
+    IF @bus_capacity < @seats
+    BEGIN
+        PRINT 'Not enough seats available';
+        RETURN;
+    END
+
+    -- Calculate the total cost
+    SET @total_cost = @seats * @per_seat_cost;
+
+    -- Retrieve current balance
+    SELECT @current_balance = balance
+    FROM accounts
+    WHERE userId = @userId;
+
+    -- Check if user has enough balance
+    IF @current_balance < @total_cost
+    BEGIN
+        PRINT 'Insufficient balance';
+        RETURN;
+    END
+
+    -- Deduct the total cost from the user's balance
+    UPDATE accounts
+    SET balance = @current_balance - @total_cost
+    WHERE userId = @userId;
+
+    -- Insert the booking and get the new booking ID
+    INSERT INTO booking VALUES (@rrId, @pName, @seats, @userId);
+
+    -- Get the new booking ID
+    SET @new_booking_id = SCOPE_IDENTITY();
+
+    -- Update the bus capacity
+    UPDATE bus 
+    SET bCapacity = bCapacity - @seats
+    WHERE routeId = @rrId;
+
+    PRINT 'Booking created and account balance updated';
+    SELECT @new_booking_id AS 'New Booking ID'; -- Return the new booking ID
+END;
+
+
+
+
+
+
+select * from booking
+
+
+
+select * from routes
+insert into routes values(103,'3rdRoute',50)
+delete from routes where rId = 103;
+select * from bus
+
+
+
+insert into bus values (1,'Lyari Express',25,30,101)
+INSERT INTO bus  VALUES (2, 'Green Line', 40, 40, 102);
+INSERT INTO bus  VALUES (3, 'Metro Express', 50, 45, 103);
+INSERT INTO bus  VALUES (4, 'City Link', 35, 30, 104);
+INSERT INTO bus  VALUES (5, 'Rapid Transit', 60, 55, 105);
+INSERT INTO bus  VALUES (6, 'National Express', 45, 40, 106);
+INSERT INTO bus  VALUES (7, 'Intercity Express', 50, 50, 107);
+INSERT INTO bus  VALUES (8, 'Regional Express', 55, 50, 108);
+INSERT INTO bus  VALUES (9, 'Golden Line', 60, 55, 109);
+INSERT INTO bus  VALUES (10, 'Blue Line', 45, 40, 110);
+INSERT INTO bus  VALUES (11, 'Silver Line', 50, 45, 111);
+INSERT INTO bus  VALUES (12, 'Diamond Express', 55, 50, 112);
+INSERT INTO bus  VALUES (13, 'Platinum Line', 60, 55, 113);
+
+INSERT INTO routes  VALUES (101, 'Lahore-Karachi', 1200);
+INSERT INTO routes  VALUES (102, 'Islamabad-Lahore', 400);
+INSERT INTO routes  VALUES (103, 'Karachi-Lahore', 50);
+
+INSERT INTO routes  VALUES (104, 'Lahore-Islamabad', 375);
+INSERT INTO routes  VALUES (105, 'Islamabad-Peshawar', 180);
+INSERT INTO routes  VALUES (106, 'Peshawar-Quetta', 830);
+INSERT INTO routes  VALUES (107, 'Quetta-Karachi', 690);
+INSERT INTO routes  VALUES (108, 'Karachi-Hyderabad', 160);
+INSERT INTO routes  VALUES (109, 'Hyderabad-Sukkur', 320);
+INSERT INTO routes  VALUES (110, 'Sukkur-Multan', 280);
+INSERT INTO routes  VALUES (111, 'Multan-Faisalabad', 220);
+INSERT INTO routes  VALUES (112, 'Faisalabad-Gujranwala', 150);
+INSERT INTO routes  VALUES (113, 'Gujranwala-Sialkot', 80);
+select * from routes;
+select * from bus;
+INSERT INTO users (userId, username, password) VALUES (2, 'adminn', 'admin123');
+
+select * from booking;
